@@ -54,39 +54,44 @@ module Resque
         @lock_timeout ||= 0
       end
 
-      # Locking algorithm: http://code.google.com/p/redis/wiki/SetnxCommand
+      # Try to acquire a lock.
       def acquire_lock!(*args)
-        lock_acquired = false
+        acquired = false
         lock_key = lock(*args)
 
         unless lock_timeout > 0
           # Acquire without using a timeout.
-          lock_acquired = true if Resque.redis.setnx(lock_key, true)
+          acquired = true if Resque.redis.setnx(lock_key, true)
         else
-          # Acquire using a timestamp.
-          now = Time.now.to_i
-          lock_until = now + lock_timeout
-
-          if Resque.redis.setnx(lock_key, lock_until)
-            lock_acquired = true
-          else
-            # If we can't acquire the lock, see if it has expired.
-            lock_expiration = Resque.redis.get(lock_key)
-            if lock_expiration && lock_expiration.to_i < now
-              # expired, try to acquire.
-              lock_expiration = Resque.redis.getset(lock_key, lock_until)
-              if lock_expiration.nil? || lock_expiration.to_i < now
-                lock_acquired = true
-              end
-            else
-              # Try once more...
-              lock_acquired = true if Resque.redis.setnx(lock_key, lock_until)
-            end
-          end
+          # Acquire using the timeout algorithm.
+          acquired, lock_until = acquire_lock_algorithm!(lock_key)
         end
 
-        lock_failed(*args) if !lock_acquired && respond_to?(:lock_failed)
-        lock_until && lock_acquired ? lock_until : lock_acquired
+        lock_failed(*args) if !acquired && respond_to?(:lock_failed)
+        lock_until && acquired ? lock_until : acquired
+      end
+
+      # Locking algorithm: http://code.google.com/p/redis/wiki/SetnxCommand
+      def acquire_lock_algorithm!(lock_key)
+        now = Time.now.to_i
+        lock_until = now + lock_timeout
+        acquired = false
+
+        acquired = true if Resque.redis.setnx(lock_key, lock_until)
+        # Can't acquire the lock, see if it has expired.
+        lock_expiration = Resque.redis.get(lock_key)
+        if lock_expiration && lock_expiration.to_i < now
+          # expired, try to acquire.
+          lock_expiration = Resque.redis.getset(lock_key, lock_until)
+          if lock_expiration.nil? || lock_expiration.to_i < now
+            acquired = true
+          end
+        else
+          # Try once more...
+          acquired = true if Resque.redis.setnx(lock_key, lock_until)
+        end
+
+        [acquired, lock_until]
       end
 
       # Release the lock.
@@ -109,23 +114,19 @@ module Resque
         ensure
           # Release the lock on success and error. Unless a lock_timeout is
           # used, then we need to be more careful before releasing the lock.
-          now = Time.now.to_i
-          release = false
-
-          if lock_until == true
-            release = true
-          else
+          unless lock_until === true
+            now = Time.now.to_i
             if lock_until < now && respond_to?(:lock_expired_before_release)
               # Eeek! Lock expired before perform finished. Trigger callback.
               lock_expired_before_release(*args)
-            else
-              release = true
+              return # dont relase lock.
             end
           end
-
-          release_lock!(*args) if release
+          release_lock!(*args)
         end
       end
+      
     end
+
   end
 end
