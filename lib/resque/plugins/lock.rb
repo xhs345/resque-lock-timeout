@@ -86,7 +86,7 @@ module Resque
       def identifier(*args)
         args.join('-')
       end
-      
+
       # Override to fully control the key used. It is passed
       # the job arguments.
       #
