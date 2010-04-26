@@ -20,30 +20,30 @@ class LockTest < Test::Unit::TestCase
   end
 
   def test_can_acquire_lock
-    SlowJob.acquire_lock
+    SlowJob.acquire_lock!
     assert_equal true, SlowJob.locked?, 'lock should be acquired'
   end
 
   def test_can_release_lock
-    SlowJob.acquire_lock
+    SlowJob.acquire_lock!
     assert_equal true, SlowJob.locked?, 'lock should be acquired'
 
-    SlowJob.release_lock
+    SlowJob.release_lock!
     assert_equal false, SlowJob.locked?, 'lock should have been released'
   end
 
   def test_lock_acquired_callback
-    FastJob.acquire_lock
+    FastJob.acquire_lock!
 
     assert_equal true, FastJob.locked?, 'lock should be acquired'
     assert_equal 1, $acquired, 'job should increment aquired'
   end
 
   def test_lock_failed_callback
-    FastJob.acquire_lock
+    FastJob.acquire_lock!
     assert_equal true, FastJob.locked?, 'lock should be acquired'
 
-    FastJob.acquire_lock
+    FastJob.acquire_lock!
     assert_equal 1, $lock_failed, 'job callback should increment lock_failed'
   end
 

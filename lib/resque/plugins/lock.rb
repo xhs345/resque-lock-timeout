@@ -49,7 +49,7 @@ module Resque
       end
 
       # Try to acquire the lock.
-      def acquire_lock(*args)
+      def acquire_lock!(*args)
         acquired = Resque.redis.setnx(lock(*args), true)
         if acquired
           lock_acquired(false, *args) if respond_to?(:lock_acquired)
@@ -60,7 +60,7 @@ module Resque
       end
 
       # Release the lock.
-      def release_lock(*args)
+      def release_lock!(*args)
         Resque.redis.del(lock(*args))
       end
 
@@ -72,14 +72,14 @@ module Resque
       # Where the magic happens.
       def around_perform_lock(*args)
         # Abort if another job has created a lock.
-        return unless acquire_lock(*args)
+        return unless acquire_lock!(*args)
 
         begin
           yield
         ensure
           # Always clear the lock when we're done, even if there is an
           # error.
-          release_lock(*args)
+          release_lock!(*args)
         end
       end
     end
