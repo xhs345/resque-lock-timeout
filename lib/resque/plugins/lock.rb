@@ -85,13 +85,12 @@ module Resque
           end
         end
 
-        lock_failed(*args) if lock_acquired == false && respond_to?(:lock_failed)
+        lock_failed(*args) if !lock_acquired && respond_to?(:lock_failed)
         lock_until && lock_acquired ? lock_until : lock_acquired
       end
 
       # Release the lock.
       def release_lock!(*args)
-        # Check if the timeout has expired first.
         Resque.redis.del(lock(*args))
       end
 
@@ -103,14 +102,28 @@ module Resque
       # Where the magic happens.
       def around_perform_lock(*args)
         # Abort if another job holds the lock.
-        return unless acquired_until = acquire_lock!(*args)
+        return unless lock_until = acquire_lock!(*args)
 
         begin
           yield
         ensure
-          # Always clear the lock when we're done, even if there is an
-          # error.
-          release_lock!(*args)
+          # Release the lock on success and error. Unless a lock_timeout is
+          # used, then we need to be more careful before releasing the lock.
+          now = Time.now.to_i
+          release = false
+
+          if lock_until == true
+            release = true
+          else
+            if lock_until < now && respond_to?(:lock_expired_before_release)
+              # Eeek! Lock expired before perform finished. Trigger callback.
+              lock_expired_before_release(*args)
+            else
+              release = true
+            end
+          end
+
+          release_lock!(*args) if release
         end
       end
     end

@@ -50,14 +50,14 @@ class SlowWithTimeoutJob
   end
 end
 
-def ExpireBeforeReleaseJob
+class ExpireBeforeReleaseJob
   extend Resque::Plugins::Lock
   @queue = :test
-  @lock_timeout = 60
+  @lock_timeout = 1
 
   def self.perform
     $success += 1
-    sleep 1
+    sleep 2
   end
 
   def self.lock_expired_before_release
