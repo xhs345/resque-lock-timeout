@@ -80,7 +80,10 @@ module Resque
                 end
               end
             else
-              lock_acquired = true
+              # Try once more...
+              if Resque.redis.setnx(lock_key, lock_for)
+                lock_acquired = true
+              end
             end
           end
         end
