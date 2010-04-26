@@ -99,7 +99,7 @@ your own logic, e.g.
 Install
 =======
 
-    $ gem install resque-exponential-backoff
+    $ gem install resque-lock
 
 [rq]: http://github.com/defunkt/resque
 [redis-setnx]: http://code.google.com/p/redis/wiki/SetnxCommand
