@@ -4,7 +4,7 @@ $TESTING = true
 
 require 'test/unit'
 require 'resque'
-require 'resque/plugins/lock'
+require 'resque-lock'
 begin; require 'turn'; rescue LoadError; end
 
 #

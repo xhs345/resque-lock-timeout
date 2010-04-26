@@ -11,7 +11,7 @@ Usage
 
 ### Single Job Instance
 
-    require 'resque/plugins/lock'
+    require 'resque-lock'
 
     class UpdateNetworkGraph
       extend Resque::Plugins::Lock
