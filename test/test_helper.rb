@@ -24,11 +24,6 @@ class FastJob
     $success += 1
   end
 
-  def self.lock_acquired(recovered, *args)
-    $acquired += 1
-    $recovered = recovered
-  end
-
   def self.lock_failed(*args)
     $lock_failed += 1
   end

@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/test_helper'
 
 class LockTest < Test::Unit::TestCase
   def setup
-    $acquired = $success = $lock_failed = 0
+    $success = $lock_failed = 0
     Resque.redis.flushall
     @worker = Resque::Worker.new(:test)
   end
@@ -30,13 +30,6 @@ class LockTest < Test::Unit::TestCase
 
     SlowJob.release_lock!
     assert_equal false, SlowJob.locked?, 'lock should have been released'
-  end
-
-  def test_lock_acquired_callback
-    FastJob.acquire_lock!
-
-    assert_equal true, FastJob.locked?, 'lock should be acquired'
-    assert_equal 1, $acquired, 'job should increment aquired'
   end
 
   def test_lock_failed_callback
@@ -73,4 +66,17 @@ class LockTest < Test::Unit::TestCase
     assert_equal false, FastJob.locked?, 'lock should have been released'
   end
 
+  def test_can_acquire_lock_with_timeout
+    now = Time.now.to_i
+    assert SlowerWithTimeoutJob.acquire_lock!, 'acquire lock'
+
+    lock = Resque.redis.get(SlowerWithTimeoutJob.lock)
+    assert (now + 58) < lock.to_i
+  end
+
+  def test_lock_recovers_after_lock_timeout
+  end
+
+  def test_lock_expired_before_release
+  end
 end
