@@ -1,6 +1,14 @@
+dir = File.dirname(File.expand_path(__FILE__))
+$LOAD_PATH.unshift dir + '/../lib'
+$TESTING = true
+
 require 'test/unit'
 require 'resque'
 require 'resque/plugins/lock'
+
+#
+# Test Jobs
+#
 
 class SlowJob
   extend Resque::Plugins::Lock
