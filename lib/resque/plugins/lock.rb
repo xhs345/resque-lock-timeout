@@ -40,6 +40,44 @@ module Resque
     # UpdateNetworkGraph is running at a time, regardless of the
     # repo_id. Normally a job is locked using a combination of its
     # class name and arguments.
+    #
+    # If you wish to limit the duration a lock may be held for, you can
+    # set/override `lock_timeout`. e.g.
+    #
+    # class UpdateNetworkGraph
+    #   extend Resque::Plugins::Lock
+    #
+    #   # lock may be held for upto an hour.
+    #   @lock_timeout = 3600
+    #
+    #   def self.perform(repo_id)
+    #     heavy_lifting
+    #   end
+    # end
+    #
+    # Several callbacks are available for you to override in your class. e.g.
+    #
+    # class UpdateNetworkGraph
+    #   extend Resque::Plugins::Lock
+    #
+    #   # lock may be held for upto an hour.
+    #   @lock_timeout = 3600
+    #
+    #   def self.perform(repo_id)
+    #     heavy_lifting
+    #   end
+    #
+    #   # failed to acquire lock. implement retry or other logic.
+    #   def self.lock_failed(repo_id)
+    #     retry_using_delay
+    #   end
+    #
+    #   # lock expired before the job finished processing.
+    #   def self.lock_expired_before_release(repo_id)
+    #     handle_if_needed
+    #   end
+    # end
+    
     module Lock
       # Override in your job to control the lock key. It is
       # passed the same arguments as `perform`, that is, your job's
