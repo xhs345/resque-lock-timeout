@@ -115,7 +115,7 @@ module Resque
         lock_until = now + lock_timeout
         acquired = false
 
-        acquired = true if Resque.redis.setnx(lock_key, lock_until)
+        return [true, lock_until] if Resque.redis.setnx(lock_key, lock_until)
         # Can't acquire the lock, see if it has expired.
         lock_expiration = Resque.redis.get(lock_key)
         if lock_expiration && lock_expiration.to_i < now
