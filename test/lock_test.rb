@@ -68,13 +68,31 @@ class LockTest < Test::Unit::TestCase
 
   def test_can_acquire_lock_with_timeout
     now = Time.now.to_i
-    assert SlowerWithTimeoutJob.acquire_lock!, 'acquire lock'
+    assert SlowWithTimeoutJob.acquire_lock!, 'acquire lock'
 
-    lock = Resque.redis.get(SlowerWithTimeoutJob.lock)
-    assert (now + 58) < lock.to_i
+    lock = Resque.redis.get(SlowWithTimeoutJob.lock)
+    assert (now + 58) < lock.to_i, 'lock expire time should be in the future'
   end
 
   def test_lock_recovers_after_lock_timeout
+    now = Time.now.to_i
+    Resque.redis.set(SlowWithTimeoutJob.lock, now - 40)
+
+    assert SlowWithTimeoutJob.acquire_lock!, 'acquire lock'
+    lock = Resque.redis.get(SlowWithTimeoutJob.lock)
+    assert (now + 58) < lock.to_i
+  end
+
+  def test_lock_with_timeout
+    3.times { Resque.enqueue(SlowWithTimeoutJob) }
+
+    workers = []
+    3.times do
+      workers << Thread.new { @worker.process }
+    end
+    workers.each { |t| t.join }
+
+    assert_equal 1, $success, 'job should increment success'
   end
 
   def test_lock_expired_before_release

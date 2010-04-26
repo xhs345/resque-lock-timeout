@@ -54,47 +54,44 @@ module Resque
         @lock_timeout ||= 0
       end
 
-      # Try to acquire the lock.
+      # Locking algorithm: http://code.google.com/p/redis/wiki/SetnxCommand
       def acquire_lock!(*args)
         lock_acquired = false
         lock_key = lock(*args)
 
         unless lock_timeout > 0
-          # acquire without using a timeout.
+          # Acquire without using a timeout.
           lock_acquired = true if Resque.redis.setnx(lock_key, true)
         else
-          # acquire using a timestamp.
+          # Acquire using a timestamp.
           now = Time.now.to_i
-          lock_for = now + lock_timeout
-          
-          if Resque.redis.setnx(lock_key, lock_for)
+          lock_until = now + lock_timeout
+
+          if Resque.redis.setnx(lock_key, lock_until)
             lock_acquired = true
           else
             # If we can't acquire the lock, see if it has expired.
-            locked_until = Resque.redis.get(lock_key)
-            if locked_until
-              if locked_until.to_i < now
-                locked_until = Resque.redis.getset(lock_key, lock_for)
-                if locked_until.nil? or locked_until.to_i < now
-                  lock_acquired = true
-                end
+            lock_expiration = Resque.redis.get(lock_key)
+            if lock_expiration && lock_expiration.to_i < now
+              # expired, try to acquire.
+              lock_expiration = Resque.redis.getset(lock_key, lock_until)
+              if lock_expiration.nil? || lock_expiration.to_i < now
+                lock_acquired = true
               end
             else
               # Try once more...
-              if Resque.redis.setnx(lock_key, lock_for)
-                lock_acquired = true
-              end
+              lock_acquired = true if Resque.redis.setnx(lock_key, lock_until)
             end
           end
         end
-        
+
         lock_failed(*args) if lock_acquired == false && respond_to?(:lock_failed)
-        lock_acquired
+        lock_until && lock_acquired ? lock_until : lock_acquired
       end
 
       # Release the lock.
       def release_lock!(*args)
-        # check if the timeout has expired first.
+        # Check if the timeout has expired first.
         Resque.redis.del(lock(*args))
       end
 
@@ -106,7 +103,7 @@ module Resque
       # Where the magic happens.
       def around_perform_lock(*args)
         # Abort if another job holds the lock.
-        return unless acquire_lock!(*args)
+        return unless acquired_until = acquire_lock!(*args)
 
         begin
           yield

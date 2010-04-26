@@ -39,14 +39,14 @@ class FailingFastJob
   end
 end
 
-class SlowerWithTimeoutJob
+class SlowWithTimeoutJob
   extend Resque::Plugins::Lock
   @queue = :test
   @lock_timeout = 60
 
   def self.perform
     $success += 1
-    sleep 1
+    sleep 0.2
   end
 end
 
