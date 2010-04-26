@@ -1,65 +1,8 @@
-require 'test/unit'
-require 'resque'
-require 'resque/plugins/lock'
-
-class SlowJob
-  extend Resque::Plugins::Lock
-  @queue = :test
-
-  def self.perform
-    $success += 1
-    sleep 0.2
-  end
-end
-
-class FastJob
-  extend Resque::Plugins::Lock
-  @queue = :test
-
-  def self.perform
-    $success += 1
-  end
-
-  def self.lock_acquired(recovered, *args)
-    $acquired += 1
-    $locked += 1
-    $recovered = recovered
-  end
-end
-
-class FailingFastJob
-  extend Resque::Plugins::Lock
-  @queue = :test
-
-  def self.perform
-    raise
-    $success += 1
-  end
-end
-
-class SlowerWithTimeoutJob
-  extend Resque::Plugins::Lock
-  @queue = :test
-  @lock_timeout = 1
-
-  def self.perform
-    $success += 1
-    sleep 3
-  end
-end
-
-def ExpireBeforeReleaseJob
-  extend Resque::Plugins::Lock
-  @queue = :test
-
-  def self.lock_expired_before_release(*args)
-    $lock_expired = true
-  end
-end
+require File.dirname(__FILE__) + '/test_helper'
 
 class LockTest < Test::Unit::TestCase
   def setup
-    $acquired = $success = $locked = 0
+    $acquired = $success = $lock_failed = 0
     Resque.redis.flushall
     @worker = Resque::Worker.new(:test)
   end
@@ -90,11 +33,18 @@ class LockTest < Test::Unit::TestCase
   end
 
   def test_lock_acquired_callback
-    Resque.enqueue(FastJob)
-    @worker.process
+    FastJob.acquire_lock
 
-    assert_equal 1, $success, 'job should increment success'
+    assert_equal true, FastJob.locked?, 'lock should be acquired'
     assert_equal 1, $acquired, 'job should increment aquired'
+  end
+
+  def test_lock_failed_callback
+    FastJob.acquire_lock
+    assert_equal true, FastJob.locked?, 'lock should be acquired'
+
+    FastJob.acquire_lock
+    assert_equal 1, $lock_failed, 'job callback should increment lock_failed'
   end
 
   def test_lock_without_timeout

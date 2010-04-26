@@ -53,6 +53,8 @@ module Resque
         acquired = Resque.redis.setnx(lock(*args), true)
         if acquired
           lock_acquired(false, *args) if respond_to?(:lock_acquired)
+        else
+          lock_failed(*args) if respond_to?(:lock_failed)
         end
         acquired
       end
