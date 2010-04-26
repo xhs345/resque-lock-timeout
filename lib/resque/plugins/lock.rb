@@ -1,9 +1,7 @@
 module Resque
   module Plugins
     # If you want only one instance of your job running at a time,
-    # extend it with this module.
-    #
-    # For example:
+    # extend it with this module:
     #
     # require 'resque/plugins/lock'
     #
@@ -21,13 +19,13 @@ module Resque
     # is executing the job will be aborted.
     #
     # If you want to define the key yourself you can override the
-    # `lock` class method in your subclass, e.g.
+    # `identifier` or `lock` method in your subclass, e.g.
     #
     # class UpdateNetworkGraph
     #   extend Resque::Plugins::Lock
     #
     #   # Run only one at a time, regardless of repo_id.
-    #   def self.lock(repo_id)
+    #   def self.identifier(repo_id)
     #     "network-graph"
     #   end
     #
@@ -55,35 +53,46 @@ module Resque
     #   end
     # end
     #
-    # Several callbacks are available for you to override in your class. e.g.
+    # Several callbacks are available to override and implement
+    # your own logic, e.g.
     #
     # class UpdateNetworkGraph
     #   extend Resque::Plugins::Lock
     #
-    #   # lock may be held for upto an hour.
+    #   # Lock may be held for upto an hour.
     #   @lock_timeout = 3600
     #
-    #   def self.perform(repo_id)
-    #     heavy_lifting
-    #   end
-    #
-    #   # failed to acquire lock. implement retry or other logic.
+    #   # Job failed to acquire lock. You may implement retry or other logic.
     #   def self.lock_failed(repo_id)
     #     retry_using_delay
     #   end
     #
-    #   # lock expired before the job finished processing.
+    #   # Job has complete; but the lock expired before we could relase it.
+    #   # The lock wasn't released; as its *possible* the lock is now held
+    #   # by another job.
     #   def self.lock_expired_before_release(repo_id)
     #     handle_if_needed
     #   end
+    #
+    #   def self.perform(repo_id)
+    #     heavy_lifting
+    #   end
     # end
-    
+    #
     module Lock
-      # Override in your job to control the lock key. It is
-      # passed the same arguments as `perform`, that is, your job's
-      # payload.
+      # Override to control the identifier for this job, used
+      # as part of the Redis lock key. It is passed the
+      # job arguments.
+      def identifier(*args)
+        args.join('-')
+      end
+      
+      # Override to fully control the key used. It is passed
+      # the job arguments.
+      #
+      # The default looks like this: 'lock:<class name>:<identifier>'
       def lock(*args)
-        "lock:#{name}-#{args.to_s}"
+        ['lock', name, identifier(*args)].compact.join(":")
       end
 
       # Number of seconds the lock may be held for.
@@ -163,7 +172,7 @@ module Resque
           release_lock!(*args)
         end
       end
-      
+
     end
 
   end
