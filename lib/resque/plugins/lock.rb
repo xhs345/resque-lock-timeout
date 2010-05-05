@@ -13,33 +13,7 @@ module Resque
     #   end
     # end
     #
-    # While other UpdateNetworkGraph jobs will be placed on the queue,
-    # the Lock class will check Redis to see if any others are
-    # executing with the same arguments before beginning. If another
-    # is executing the job will be aborted.
-    #
-    # If you want to define the key yourself you can override the
-    # `identifier` or `lock` method in your subclass, e.g.
-    #
-    # class UpdateNetworkGraph
-    #   extend Resque::Plugins::Lock
-    #
-    #   # Run only one at a time, regardless of repo_id.
-    #   def self.identifier(repo_id)
-    #     "network-graph"
-    #   end
-    #
-    #   def self.perform(repo_id)
-    #     heavy_lifting
-    #   end
-    # end
-    #
-    # The above modification will ensure only one job of class
-    # UpdateNetworkGraph is running at a time, regardless of the
-    # repo_id. Normally a job is locked using a combination of its
-    # class name and arguments.
-    #
-    # If you wish to limit the duration a lock may be held for, you can
+    # If you wish to limit the durati on a lock may be held for, you can
     # set/override `lock_timeout`. e.g.
     #
     # class UpdateNetworkGraph
@@ -53,45 +27,28 @@ module Resque
     #   end
     # end
     #
-    # Several callbacks are available to override and implement
-    # your own logic, e.g.
-    #
-    # class UpdateNetworkGraph
-    #   extend Resque::Plugins::Lock
-    #
-    #   # Lock may be held for upto an hour.
-    #   @lock_timeout = 3600
-    #
-    #   # Job failed to acquire lock. You may implement retry or other logic.
-    #   def self.lock_failed(repo_id)
-    #     retry_using_delay
-    #   end
-    #
-    #   # Job has complete; but the lock expired before we could relase it.
-    #   # The lock wasn't released; as its *possible* the lock is now held
-    #   # by another job.
-    #   def self.lock_expired_before_release(repo_id)
-    #     handle_if_needed
-    #   end
-    #
-    #   def self.perform(repo_id)
-    #     heavy_lifting
-    #   end
-    # end
-    #
     module Lock
-      # Override to control the identifier for this job, used
-      # as part of the Redis lock key. It is passed the
-      # job arguments.
+      # @abstract You may override to implement a custom identifier,
+      #           you should consider doing this if your job arguments
+      #           are many/long or may not cleanly cleanly to strings.
+      #
+      # Builds an identifier using the job arguments. This identifier
+      # is used as part of the redis lock key.
+      #
+      # @param [Array] args job arguments
+      # @return [String, nil] job identifier
       def identifier(*args)
         args.join('-')
       end
 
-      # Override to fully control the key used. It is passed
+      # Override to fully control the lock key used. It is passed
       # the job arguments.
       #
-      # The default looks like this: 'lock:<class name>:<identifier>'
-      def lock(*args)
+      # The default looks like this:
+      # `resque-lock-timeout:<class name>:<identifier>`
+      #
+      # @return [String] redis key
+      def redis_lock_key(*args)
         ['lock', name, identifier(*args)].compact.join(":")
       end
 
@@ -104,7 +61,7 @@ module Resque
       # Try to acquire a lock.
       def acquire_lock!(*args)
         acquired = false
-        lock_key = lock(*args)
+        lock_key = redis_lock_key(*args)
 
         unless lock_timeout > 0
           # Acquire without using a timeout.
@@ -143,12 +100,12 @@ module Resque
 
       # Release the lock.
       def release_lock!(*args)
-        Resque.redis.del(lock(*args))
+        Resque.redis.del(redis_lock_key(*args))
       end
 
       # Convenience method, not used internally.
       def locked?(*args)
-        Resque.redis.exists(lock(*args))
+        Resque.redis.exists(redis_lock_key(*args))
       end
 
       # Where the magic happens.
