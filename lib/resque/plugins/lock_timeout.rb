@@ -6,7 +6,8 @@ module Resque
     # require 'resque-lock'
     #
     # class UpdateNetworkGraph
-    #   extend Resque::Plugins::Lock
+    #   extend Resque::Plugins::LockTimeout
+    #   @queue = :network_graph
     #
     #   def self.perform(repo_id)
     #     heavy_lifting
@@ -17,7 +18,8 @@ module Resque
     # set/override `lock_timeout`. e.g.
     #
     # class UpdateNetworkGraph
-    #   extend Resque::Plugins::Lock
+    #   extend Resque::Plugins::LockTimeout
+    #   @queue = :network_graph
     #
     #   # lock may be held for upto an hour.
     #   @lock_timeout = 3600
@@ -27,7 +29,7 @@ module Resque
     #   end
     # end
     #
-    module Lock
+    module LockTimeout
       # @abstract You may override to implement a custom identifier,
       #           you should consider doing this if your job arguments
       #           are many/long or may not cleanly cleanly to strings.

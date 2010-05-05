@@ -1,5 +1,5 @@
 class SlowJob
-  extend Resque::Plugins::Lock
+  extend Resque::Plugins::LockTimeout
   @queue = :test
 
   def self.perform
@@ -13,7 +13,7 @@ class SlowJob
 end
 
 class FastJob
-  extend Resque::Plugins::Lock
+  extend Resque::Plugins::LockTimeout
   @queue = :test
 
   def self.perform
@@ -26,7 +26,7 @@ class FastJob
 end
 
 class FailingFastJob
-  extend Resque::Plugins::Lock
+  extend Resque::Plugins::LockTimeout
   @queue = :test
 
   def self.perform
@@ -36,7 +36,7 @@ class FailingFastJob
 end
 
 class SlowWithTimeoutJob
-  extend Resque::Plugins::Lock
+  extend Resque::Plugins::LockTimeout
   @queue = :test
   @lock_timeout = 60
 
@@ -47,7 +47,7 @@ class SlowWithTimeoutJob
 end
 
 class ExpireBeforeReleaseJob
-  extend Resque::Plugins::Lock
+  extend Resque::Plugins::LockTimeout
   @queue = :test
   @lock_timeout = 1
 

@@ -9,7 +9,7 @@ class LockTest < Test::Unit::TestCase
 
   def test_lint
     assert_nothing_raised do
-      Resque::Plugin.lint(Resque::Plugins::Lock)
+      Resque::Plugin.lint(Resque::Plugins::LockTimeout)
     end
   end
 
