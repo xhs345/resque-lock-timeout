@@ -56,11 +56,20 @@ module Resque
 
       # Number of seconds the lock may be held for.
       # A value of 0 or below will lock without a timeout.
+      #
+      # @return [Fixnum]
       def lock_timeout
         @lock_timeout ||= 0
       end
 
       # Try to acquire a lock.
+      #
+      # * Returns false; when unable to acquire the lock.
+      # * Returns true; when lock acquired, without a timeout.
+      # * Returns timestamp; when lock acquired with a timeout, timestamp is
+      #   when the lock timeout expires.
+      #
+      # @return [Boolean, Fixnum]
       def acquire_lock!(*args)
         acquired = false
         lock_key = redis_lock_key(*args)
@@ -77,6 +86,8 @@ module Resque
         lock_until && acquired ? lock_until : acquired
       end
 
+      # Attempts to aquire the lock using a timeout / deadlock algorithm.
+      #
       # Locking algorithm: http://code.google.com/p/redis/wiki/SetnxCommand
       def acquire_lock_algorithm!(lock_key)
         now = Time.now.to_i
@@ -106,6 +117,8 @@ module Resque
       end
 
       # Convenience method, not used internally.
+      #
+      # @return [Boolean] true if the job is locked by someone
       def locked?(*args)
         Resque.redis.exists(redis_lock_key(*args))
       end
