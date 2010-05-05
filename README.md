@@ -1,54 +1,41 @@
-Resque Lock
-===========
+Resque Lock Timeout
+===================
 
-A [Resque][rq] plugin. Requires Resque 1.7.0.
+A [Resque][rq] plugin. Requires Resque 1.8.0.
 
-If you want only one instance of your job running at a time, extend it
-with this module.
+resque-lock-timeout adds locking, with optional timeout/deadlock handling to
+resque jobs.
 
-Usage
------
+Using a `lock_timeout` allows you to re-aquire the lock should your worker
+fail, crash, or is otherwise unable to relase the lock. **i.e.** Your server
+unexpectedly looses power. Very handy for jobs that are recurring or may be
+retried.
+
+Usage / Examples
+----------------
 
 ### Single Job Instance
 
-    require 'resque-lock'
+    require 'resque-lock-timeout'
 
     class UpdateNetworkGraph
-      extend Resque::Plugins::Lock
+      extend Resque::Plugins::LockTimeout
+      @queue = :network_graph
 
       def self.perform(repo_id)
         heavy_lifting
       end
     end
 
-While other UpdateNetworkGraph jobs will be placed on the queue,
-the Locked class will check Redis to see if any others are
-executing with the same arguments before beginning. If another
-is executing the job will be aborted, if defined `lock_failed`
-will be called with the job arguments.
+Locking is achieved by storing a identifyer/lock key in Redis.
 
-### Custom Lock Key
+Default behaviour...
 
-If you want to define the key yourself you can override the
-`lock` class method in your subclass, e.g.
+* Only one instance of a job may execute at once.
+* The lock is held until the job completes or fails.
+* If another job is executing with the same arguments the job will abort.
 
-    class UpdateNetworkGraph
-      extend Resque::Plugins::Lock
-
-      # Run only one at a time, regardless of repo_id.
-      def self.lock(repo_id)
-        'network-graph'
-      end
-
-      def self.perform(repo_id)
-        heavy_lifting
-      end
-    end
-
-The above modification will ensure only one job of class
-UpdateNetworkGraph is running at a time, regardless of the
-repo_id. Normally a job is locked using a combination of its
-class name and arguments.
+Please see below for more information about the identifer/lock key.
 
 ### With Lock Expiry/Timeout
 
@@ -58,7 +45,8 @@ documentation.
 Simply set the lock timeout in seconds, e.g.
 
     class UpdateNetworkGraph
-      extend Resque::Plugins::Lock
+      extend Resque::Plugins::LockTimeout
+      @queue = :network_graph
 
       # Lock may be held for upto an hour.
       @lock_timeout = 3600
@@ -68,20 +56,56 @@ Simply set the lock timeout in seconds, e.g.
       end
     end
 
-### Callback Methods
+Customise & Extend
+==================
 
-Several callbacks are available to override and implement
-your own logic, e.g.
+### Job Identifier/Lock Key
+
+The key is built using the `identifier`. If you have a lot of arguments or
+really long ones, you should consider overriding `identifier` to define a
+more precise or loose custom identifier.
+
+The default identifier is just your job arguments joined with a dash `-`.
+
+By default the key uses this format: 
+`resque-lock-timeout:<job class name>:<identifier>`.
+
+Or you can define the entire key by overriding `redis_lock_key`.
+
+    class UpdateNetworkGraph
+      extend Resque::Plugins::LockTimeout
+      @queue = :network_graph
+
+      # Run only one at a time, regardless of repo_id.
+      def self.identifier(repo_id)
+        nil
+      end
+
+      def self.perform(repo_id)
+        heavy_lifting
+      end
+    end
+
+The above modification will ensure only one job of class
+UpdateNetworkGraph is running at a time, regardless of the
+repo_id.
+
+It's lock key would be: `resque-lock-timeout:UpdateNetworkGraph`.
+
+### Callbacks
+
+Several callbacks are available to override and implement your own logic, e.g.
 
     class UpdateNetworkGraph
       extend Resque::Plugins::Lock
+      @queue = :network_graph
 
       # Lock may be held for upto an hour.
       @lock_timeout = 3600
 
       # Job failed to acquire lock. You may implement retry or other logic.
       def self.lock_failed(repo_id)
-        retry_using_delay
+        raise LockFailed
       end
 
       # Job has complete; but the lock expired before we could relase it.
@@ -99,7 +123,16 @@ your own logic, e.g.
 Install
 =======
 
-    $ gem install resque-lock
+    $ gem install resque-lock-retry
+
+Acknowledgements
+================
+
+Forked from Chris Wanstrath' [resque-lock][resque-lock] plugin.
+Lock timeout from Ryan Carvar' [resque-lock-retry][resque-lock-retry] plugin.
+And a little tinkering from Luke Antins.
 
 [rq]: http://github.com/defunkt/resque
 [redis-setnx]: http://code.google.com/p/redis/wiki/SetnxCommand
+[resque-lock]: http://github.com/defunkt/resque-lock
+[resque-lock-retry]: http://github.com/rcarver/resque-lock-retry
