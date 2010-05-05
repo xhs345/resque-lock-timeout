@@ -12,6 +12,10 @@ Gem::Specification.new do |s|
   s.files            += Dir.glob('lib/**/*')
   s.files            += Dir.glob('test/**/*')
 
+  s.add_dependency('resque', '~> 1.8.0')
+  s.add_development_dependency('turn')
+  s.add_development_dependency('yard')
+
   s.description       = <<desc
   A Resque plugin. Adds locking, with optional timeout/deadlock handling to
   resque jobs.
