@@ -4,72 +4,38 @@ $TESTING = true
 
 require 'test/unit'
 require 'resque'
-require 'resque-lock'
-begin; require 'turn'; rescue LoadError; end
+require 'turn'
 
-#
-# Test Jobs
-#
+require 'resque-lock-timeout'
+require dir + '/test_jobs'
 
-class SlowJob
-  extend Resque::Plugins::Lock
-  @queue = :test
-
-  def self.perform
-    $success += 1
-    sleep 0.2
-  end
-
-  def self.lock_failed(*args)
-    $lock_failed += 1
-  end
+##
+# make sure we can run redis
+if !system("which redis-server")
+  puts '', "** can't find `redis-server` in your path"
+  puts "** try running `sudo rake install`"
+  abort ''
 end
 
-class FastJob
-  extend Resque::Plugins::Lock
-  @queue = :test
+##
+# start our own redis when the tests start,
+# kill it when they end
+at_exit do
+  next if $!
 
-  def self.perform
-    $success += 1
+  if defined?(MiniTest)
+    exit_code = MiniTest::Unit.new.run(ARGV)
+  else
+    exit_code = Test::Unit::AutoRunner.run
   end
 
-  def self.lock_failed(*args)
-    $lock_failed += 1
-  end
+  pid = `ps -e -o pid,command | grep [r]edis-test`.split(" ")[0]
+  puts "Killing test redis server..."
+  `rm -f #{dir}/dump.rdb`
+  Process.kill("KILL", pid.to_i)
+  exit exit_code
 end
 
-class FailingFastJob
-  extend Resque::Plugins::Lock
-  @queue = :test
-
-  def self.perform
-    raise
-    $success += 1
-  end
-end
-
-class SlowWithTimeoutJob
-  extend Resque::Plugins::Lock
-  @queue = :test
-  @lock_timeout = 60
-
-  def self.perform
-    $success += 1
-    sleep 0.2
-  end
-end
-
-class ExpireBeforeReleaseJob
-  extend Resque::Plugins::Lock
-  @queue = :test
-  @lock_timeout = 1
-
-  def self.perform
-    $success += 1
-    sleep 2
-  end
-
-  def self.lock_expired_before_release
-    $lock_expired = true
-  end
-end
+puts "Starting redis for testing at localhost:9736..."
+`redis-server #{dir}/redis-test.conf`
+Resque.redis = '127.0.0.1:9736'

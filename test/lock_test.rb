@@ -70,7 +70,7 @@ class LockTest < Test::Unit::TestCase
     now = Time.now.to_i
     assert SlowWithTimeoutJob.acquire_lock!, 'acquire lock'
 
-    lock = Resque.redis.get(SlowWithTimeoutJob.lock)
+    lock = Resque.redis.get(SlowWithTimeoutJob.redis_lock_key)
     assert (now + 58) < lock.to_i, 'lock expire time should be in the future'
   end
 
@@ -79,10 +79,10 @@ class LockTest < Test::Unit::TestCase
     assert SlowWithTimeoutJob.acquire_lock!, 'acquire lock'
     assert_equal false, SlowWithTimeoutJob.acquire_lock!, 'acquire lock fails'
 
-    Resque.redis.set(SlowWithTimeoutJob.lock, now - 40) # haxor timeout.
+    Resque.redis.set(SlowWithTimeoutJob.redis_lock_key, now - 40) # haxor timeout.
     assert SlowWithTimeoutJob.acquire_lock!, 'acquire lock, timeout expired'
 
-    lock = Resque.redis.get(SlowWithTimeoutJob.lock)
+    lock = Resque.redis.get(SlowWithTimeoutJob.redis_lock_key)
     assert (now + 58) < lock.to_i
   end
 
