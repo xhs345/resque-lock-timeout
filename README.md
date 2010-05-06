@@ -123,7 +123,7 @@ Several callbacks are available to override and implement your own logic, e.g.
 Install
 =======
 
-    $ gem install resque-lock-retry
+    $ gem install resque-lock-timeout
 
 Acknowledgements
 ================
