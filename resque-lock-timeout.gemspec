@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name              = 'resque-lock-timeout'
-  s.version           = '0.2.0'
+  s.version           = '0.2.1'
   s.date              = Time.now.strftime('%Y-%m-%d')
   s.summary           = 'A Resque plugin adding locking, with optional timeout/deadlock handling to resque jobs.'
   s.homepage          = 'http://github.com/lantins/resque-lock-timeout'
@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.authors           = ['Luke Antins', 'Ryan Carver', 'Chris Wanstrath']
   s.has_rdoc          = false
 
-  s.files             = %w(README.md Rakefile LICENSE)
+  s.files             = %w(README.md Rakefile LICENSE HISTORY.md)
   s.files            += Dir.glob('lib/**/*')
   s.files            += Dir.glob('test/**/*')
 
