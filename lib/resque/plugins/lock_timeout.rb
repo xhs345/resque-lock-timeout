@@ -116,6 +116,11 @@ module Resque
         Resque.redis.del(redis_lock_key(*args))
       end
 
+      # Refresh the lock.
+      def refresh_lock(*args)
+        Resque.redis.set(redis_lock_key(*args), Time.now.to_i)
+      end
+
       # Convenience method, not used internally.
       #
       # @return [Boolean] true if the job is locked by someone
