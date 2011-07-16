@@ -126,4 +126,34 @@ class LockTest < Test::Unit::TestCase
     assert_nil lock_redis.get('specific_redis')
     assert_equal 1, $success, 'job should increment success'
   end
+
+  def test_lock_timeout_accepts_job_args
+    # setup our time values.
+    now = Time.now.to_i
+    one_hour_ahead = now + 3600
+    twelve_hours_ahead = (now + (3600 * 12))
+
+    # 1 hour ahead.
+    assert VariableTimeoutJob.acquire_lock!(1) >= one_hour_ahead, 'lock should be 1 hour ahead'
+    VariableTimeoutJob.release_lock!
+
+    # 12 hours ahead.
+    assert VariableTimeoutJob.acquire_lock!(12) >= twelve_hours_ahead, 'lock should be 12 hours ahead'
+    VariableTimeoutJob.release_lock!
+  end
+
+  def test_refresh_lock!
+    # grab the lock.
+    RefreshLockJob.acquire_lock!
+    sleep 2
+
+    # grab the initial lock timeout then refresh the lock.
+    initial_lock = Resque.redis.get(RefreshLockJob.redis_lock_key).to_i
+    RefreshLockJob.refresh_lock!
+
+    # lock should now be at least 1 second more then the initial lock.
+    latest_lock = Resque.redis.get(RefreshLockJob.redis_lock_key).to_i
+    diff = latest_lock - initial_lock
+    assert diff >= 1, 'diff between initial lock and refreshed lock should be at least 1 second'
+  end
 end

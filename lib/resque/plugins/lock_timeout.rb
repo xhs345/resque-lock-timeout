@@ -59,6 +59,7 @@ module Resque
       # The default looks like this:
       # `resque-lock-timeout:<class name>:<identifier>`
       #
+      # @param [Array] args job arguments
       # @return [String] redis key
       def redis_lock_key(*args)
         ['lock', name, identifier(*args)].compact.join(":")
@@ -67,6 +68,7 @@ module Resque
       # Number of seconds the lock may be held for.
       # A value of 0 or below will lock without a timeout.
       #
+      # @param [Array] args job arguments
       # @return [Fixnum]
       def lock_timeout(*args)
         @lock_timeout ||= 0
@@ -120,6 +122,9 @@ module Resque
       # Attempts to aquire the lock using a timeout / deadlock algorithm.
       #
       # Locking algorithm: http://code.google.com/p/redis/wiki/SetnxCommand
+      #
+      # @param [String] lock_key redis lock key
+      # @param [Array] args job arguments
       def acquire_lock_algorithm!(lock_key, *args)
         now = Time.now.to_i
         lock_until = now + lock_timeout(*args)
@@ -143,16 +148,24 @@ module Resque
       end
 
       # Release the lock.
+      #
+      # @param [Array] args job arguments
       def release_lock!(*args)
         lock_redis.del(redis_lock_key(*args))
       end
 
       # Refresh the lock.
-      def refresh_lock(*args)
-        lock_redis.set(redis_lock_key(*args), Time.now.to_i)
+      #
+      # @param [Array] args job arguments
+      def refresh_lock!(*args)
+        now = Time.now.to_i
+        lock_until = now + lock_timeout(*args)
+        lock_redis.set(redis_lock_key(*args), lock_until)
       end
 
       # Where the magic happens.
+      #
+      # @param [Array] args job arguments
       def around_perform_lock(*args)
         # Abort if another job holds the lock.
         return unless lock_until = acquire_lock!(*args)

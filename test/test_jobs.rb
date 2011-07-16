@@ -1,3 +1,4 @@
+# Slow successful job, does not use timeout algorithm.
 class SlowJob
   extend Resque::Plugins::LockTimeout
   @queue = :test
@@ -12,6 +13,7 @@ class SlowJob
   end
 end
 
+# Fast successful job, does not use timeout algorithm.
 class FastJob
   extend Resque::Plugins::LockTimeout
   @queue = :test
@@ -25,6 +27,7 @@ class FastJob
   end
 end
 
+# Job that fails quickly, does not use timeout algorithm.
 class FailingFastJob
   extend Resque::Plugins::LockTimeout
   @queue = :test
@@ -35,6 +38,7 @@ class FailingFastJob
   end
 end
 
+# Job that enables the timeout algorithm.
 class SlowWithTimeoutJob
   extend Resque::Plugins::LockTimeout
   @queue = :test
@@ -46,6 +50,7 @@ class SlowWithTimeoutJob
   end
 end
 
+# Job that releases its lock AFTER its expired.
 class ExpireBeforeReleaseJob
   extend Resque::Plugins::LockTimeout
   @queue = :test
@@ -61,6 +66,7 @@ class ExpireBeforeReleaseJob
   end
 end
 
+# Job that uses a spesific redis connection just for storing locks.
 class SpecificRedisJob
   extend Resque::Plugins::LockTimeout
   @queue = :test
@@ -81,4 +87,29 @@ class SpecificRedisJob
     $success += 1
     sleep 0.2
   end
+end
+
+# Job that uses a different lock timeout value depending on job args.
+class VariableTimeoutJob
+  extend Resque::Plugins::LockTimeout
+  @queue = :test
+
+  def self.identifier(*args)
+    nil
+  end
+
+  def self.lock_timeout(extra_timeout)
+    3600 * extra_timeout
+  end
+
+  def self.perform
+    $success += 1
+  end
+end
+
+# Job to simulate a long running job that refreshes its hold on the lock.
+class RefreshLockJob
+  extend Resque::Plugins::LockTimeout
+  @queue = :test
+  @lock_timeout = 60
 end
