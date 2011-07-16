@@ -68,7 +68,7 @@ module Resque
       # A value of 0 or below will lock without a timeout.
       #
       # @return [Fixnum]
-      def lock_timeout
+      def lock_timeout(*args)
         @lock_timeout ||= 0
       end
 
@@ -105,12 +105,12 @@ module Resque
         acquired = false
         lock_key = redis_lock_key(*args)
 
-        unless lock_timeout > 0
+        unless lock_timeout(*args) > 0
           # Acquire without using a timeout.
           acquired = true if lock_redis.setnx(lock_key, true)
         else
           # Acquire using the timeout algorithm.
-          acquired, lock_until = acquire_lock_algorithm!(lock_key)
+          acquired, lock_until = acquire_lock_algorithm!(lock_key, *args)
         end
 
         lock_failed(*args) if !acquired
@@ -120,9 +120,9 @@ module Resque
       # Attempts to aquire the lock using a timeout / deadlock algorithm.
       #
       # Locking algorithm: http://code.google.com/p/redis/wiki/SetnxCommand
-      def acquire_lock_algorithm!(lock_key)
+      def acquire_lock_algorithm!(lock_key, *args)
         now = Time.now.to_i
-        lock_until = now + lock_timeout
+        lock_until = now + lock_timeout(*args)
         acquired = false
 
         return [true, lock_until] if lock_redis.setnx(lock_key, lock_until)
@@ -145,6 +145,11 @@ module Resque
       # Release the lock.
       def release_lock!(*args)
         lock_redis.del(redis_lock_key(*args))
+      end
+
+      # Refresh the lock.
+      def refresh_lock(*args)
+        lock_redis.set(redis_lock_key(*args), Time.now.to_i)
       end
 
       # Where the magic happens.
