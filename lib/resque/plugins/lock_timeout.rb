@@ -72,6 +72,27 @@ module Resque
         @lock_timeout ||= 0
       end
 
+      # Convenience method, not used internally.
+      #
+      # @return [Boolean] true if the job is locked by someone
+      def locked?(*args)
+        lock_redis.exists(redis_lock_key(*args))
+      end
+
+      # @abstract
+      # Hook method; called when a were unable to aquire the lock.
+      #
+      # @param [Array] args job arguments
+      def lock_failed(*args)
+      end
+
+      # @abstract
+      # Hook method; called when the lock expired before we released it.
+      #
+      # @param [Array] args job arguments
+      def lock_expired_before_release(*args)
+      end
+
       # Try to acquire a lock.
       #
       # * Returns false; when unable to acquire the lock.
@@ -92,7 +113,7 @@ module Resque
           acquired, lock_until = acquire_lock_algorithm!(lock_key)
         end
 
-        lock_failed(*args) if !acquired && respond_to?(:lock_failed)
+        lock_failed(*args) if !acquired
         lock_until && acquired ? lock_until : acquired
       end
 
@@ -126,21 +147,10 @@ module Resque
         lock_redis.del(redis_lock_key(*args))
       end
 
-      # Convenience method, not used internally.
-      #
-      # @return [Boolean] true if the job is locked by someone
-      def locked?(*args)
-        lock_redis.exists(redis_lock_key(*args))
-      end
-
-      # Override this method to handle the job if lock exists
-      def abort_lock(*args)
-      end
-
       # Where the magic happens.
       def around_perform_lock(*args)
         # Abort if another job holds the lock.
-        return abort_lock(*args) unless lock_until = acquire_lock!(*args)
+        return unless lock_until = acquire_lock!(*args)
 
         begin
           yield
@@ -149,7 +159,7 @@ module Resque
           # used, then we need to be more careful before releasing the lock.
           unless lock_until === true
             now = Time.now.to_i
-            if lock_until < now && respond_to?(:lock_expired_before_release)
+            if lock_until < now
               # Eeek! Lock expired before perform finished. Trigger callback.
               lock_expired_before_release(*args)
               return # dont relase lock.
