@@ -1,5 +1,4 @@
 require 'rake/testtask'
-require 'rake/rdoctask'
 require 'yard'
 require 'yard/rake/yardoc_task'
 
