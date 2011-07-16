@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name              = 'resque-lock-timeout'
-  s.version           = '0.3.0'
+  s.version           = '0.3.1'
   s.date              = Time.now.strftime('%Y-%m-%d')
   s.summary           = 'A Resque plugin adding locking, with optional timeout/deadlock handling to resque jobs.'
   s.homepage          = 'http://github.com/lantins/resque-lock-timeout'

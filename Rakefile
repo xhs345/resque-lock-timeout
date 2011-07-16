@@ -14,7 +14,7 @@ desc 'Build Yardoc documentation.'
 YARD::Rake::YardocTask.new :yardoc do |t|
     t.files   = ['lib/**/*.rb']
     t.options = ['--output-dir', "doc/",
-                 '--files', 'LICENSE',
+                 '--files', 'LICENSE,HISTORY.md',
                  '--readme', 'README.md',
                  '--title', 'resque-lock-timeout documentation']
 end

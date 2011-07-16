@@ -1,3 +1,8 @@
+## 0.3.1 (2011-07-16)
+
+* Pass job arguments to `lock_timeout`. (Bob Potter)
+* Added `refresh_lock!` method for long running jobs. (Bob Potter)
+
 ## 0.3.0 (2011-07-16)
 
 * Ability to customize redis connection used for storing locks.

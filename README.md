@@ -110,6 +110,30 @@ change this you may override `lock_redis`.
       end
     end
 
+### Setting Timeout At Runtime
+
+You may define the `lock_timeout` method to adjust the timeout at runtime
+using job arguments. e.g.
+
+    class UpdateNetworkGraph
+      extend Resque::Plugins::LockTimeout
+      @queue = :network_graph
+
+      def self.lock_timeout(repo_id, timeout_minutes)
+        60 * timeout_minutes
+      end
+
+      def self.perform(repo_id, timeout_minutes = 1)
+        heavy_lifting
+      end
+    end
+
+### Helper Methods
+
+* `locked?` - checks if the lock is currently held.
+* `refresh_lock!` - Refresh the lock, useful for jobs that are taking longer
+    then usual but your okay with them holding on to the lock a little longer.
+
 ### Callbacks
 
 Several callbacks are available to override and implement your own logic, e.g.
