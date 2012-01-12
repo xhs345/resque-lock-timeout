@@ -86,7 +86,7 @@ The above modification will ensure only one job of class
 UpdateNetworkGraph is running at a time, regardless of the
 repo_id.
 
-Its lock key would be: `lock:UpdateNetworkGraph`.
+Its lock key would be: `lock:UpdateNetworkGraph` (the `:<identifier>` part is left out if the identifier is `nil`).
 
 You can define the entire key by overriding `redis_lock_key`:
 
