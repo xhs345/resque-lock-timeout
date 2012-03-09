@@ -2,14 +2,14 @@ dir = File.dirname(File.expand_path(__FILE__))
 $LOAD_PATH.unshift dir + '/../lib'
 $TESTING = true
 
-gem 'minitest'
+require 'rubygems'
 require 'minitest/unit'
 require 'minitest/pride'
 require 'simplecov'
 
 SimpleCov.start do
   add_filter '/test/'
-end
+end unless RUBY_PLATFORM == 'java'
 
 require 'resque-lock-timeout'
 require dir + '/test_jobs'
@@ -31,8 +31,8 @@ at_exit do
   pid = `ps -e -o pid,command | grep [r]edis-test`.split(' ')[0]
   puts 'Killing test redis server...'
   `rm -f #{dir}/dump.rdb`
-  Process.kill('KILL', pid.to_i)
-  exit exit_code
+  `kill -9 #{pid}`
+  exit(exit_code)
 end
 
 puts 'Starting redis for testing at localhost:9736...'
