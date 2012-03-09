@@ -1,3 +1,4 @@
+## 0.3.3 (2012-03-09)
 ## 0.3.2 (2012-03-09)
 
 * Release changes nothing of importance, tested against v1.20.0 of resque.
