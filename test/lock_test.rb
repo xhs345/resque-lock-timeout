@@ -1,16 +1,15 @@
 require File.dirname(__FILE__) + '/test_helper'
 
-class LockTest < Test::Unit::TestCase
+class LockTest < MiniTest::Unit::TestCase
   def setup
     $success = $lock_failed = $lock_expired = 0
     Resque.redis.flushall
     @worker = Resque::Worker.new(:test)
   end
 
-  def test_lint
-    assert_nothing_raised do
-      Resque::Plugin.lint(Resque::Plugins::LockTimeout)
-    end
+  def test_resque_plugin_lint
+    # will raise exception if were not a good plugin.
+    assert Resque::Plugin.lint(Resque::Plugins::LockTimeout)
   end
 
   def test_version
@@ -120,7 +119,7 @@ class LockTest < Test::Unit::TestCase
     # this is nil in Resque.redis since we make no attempt to add a resque:
     # prefix to the key
     assert_nil Resque.redis.get('specific_redis')
-    assert_not_nil lock_redis.get('specific_redis')
+    assert lock_redis.get('specific_redis')
 
     thread.join
     assert_nil lock_redis.get('specific_redis')

@@ -62,7 +62,7 @@ module Resque
       # @param [Array] args job arguments
       # @return [String] redis key
       def redis_lock_key(*args)
-        ['lock', name, identifier(*args)].compact.join(":")
+        ['lock', name, identifier(*args)].compact.join(':')
       end
 
       # Number of seconds the lock may be held for.

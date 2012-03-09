@@ -1,3 +1,7 @@
+## 0.3.2 (2012-03-09)
+
+* Release changes nothing of importance, tested against v1.20.0 of resque.
+
 ## 0.3.1 (2011-07-16)
 
 * Pass job arguments to `lock_timeout`. (Bob Potter)
