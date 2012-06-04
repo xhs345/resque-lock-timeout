@@ -14,27 +14,27 @@ end unless RUBY_PLATFORM == 'java'
 require 'resque-lock-timeout'
 require dir + '/test_jobs'
 
-# make sure we can run redis
+# make sure we can run redis-server
 if !system('which redis-server')
-  puts '', "** can't find `redis-server` in your path"
-  puts '** try running `sudo rake install`'
+  puts '', "** `redis-server` was not found in your PATH"
   abort ''
 end
 
-# start our own redis when the tests start,
-# kill it when they end
+# make sure we can shutdown the server using cli.
+if !system('which redis-cli')
+  puts '', "** `redis-cli` was not found in your PATH"
+  abort ''
+end
+
+# This code is run `at_exit` to setup everything before running the tests.
+# Redis server is started before this code block runs.
 at_exit do
   next if $!
 
   exit_code = MiniTest::Unit.new.run(ARGV)
-
-  pid = `ps -e -o pid,command | grep [r]edis-test`.split(' ')[0]
-  puts 'Killing test redis server...'
-  `rm -f #{dir}/dump.rdb`
-  `kill -9 #{pid}`
-  exit(exit_code)
+  `redis-cli -p 9737 shutdown nosave`
 end
 
-puts 'Starting redis for testing at localhost:9736...'
+puts "Starting redis for testing at localhost:9737..."
 `redis-server #{dir}/redis-test.conf`
-Resque.redis = '127.0.0.1:9736'
+Resque.redis = '127.0.0.1:9737'
