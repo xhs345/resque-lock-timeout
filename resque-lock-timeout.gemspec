@@ -17,8 +17,9 @@ Gem::Specification.new do |s|
   s.add_development_dependency('minitest')
   s.add_development_dependency('json')
   s.add_development_dependency('yard')
-  s.add_development_dependency('rdiscount')
+  s.add_development_dependency('rdiscount') unless RUBY_PLATFORM == 'java'
   s.add_development_dependency('simplecov', '>= 0.3.0')
+  s.add_development_dependency('SystemTimer') if Gem.ruby_version < Gem::Version.new('1.9')
 
   s.description       = <<desc
   A Resque plugin. Adds locking, with optional timeout/deadlock handling to
