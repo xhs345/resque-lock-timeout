@@ -5,11 +5,14 @@ $TESTING = true
 require 'rubygems'
 require 'minitest/unit'
 require 'minitest/pride'
-require 'simplecov'
 
-SimpleCov.start do
-  add_filter '/test/'
-end unless RUBY_PLATFORM == 'java'
+# Run code coverage in MRI 1.9 only.
+if RUBY_VERSION >= '1.9' && RUBY_ENGINE == 'ruby'
+  require 'simplecov'
+  SimpleCov.start do
+    add_filter '/test/'
+  end
+end
 
 require 'resque-lock-timeout'
 require dir + '/test_jobs'
