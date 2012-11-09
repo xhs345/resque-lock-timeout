@@ -150,22 +150,29 @@ module Resque
         end
       end
 
-      # Try to acquire a lock.
-      #
-      # * Returns false; when unable to acquire the lock.
-      # * Returns true; when lock acquired, without a timeout.
-      # * Returns timestamp; when lock acquired with a timeout, timestamp is
-      #   when the lock timeout expires.
-      #
+      # Try to acquire a lock for running the job.
       # @return [Boolean, Fixnum]
       def acquire_lock!(*args)
         acquire_lock_impl!(:redis_lock_key, :lock_failed, *args)
       end
 
+      # Try to acquire a lock to enqueue a loner job.
+      # @return [Boolean, Fixnum]
       def acquire_loner_lock!(*args)
         acquire_lock_impl!(:redis_loner_lock_key, :loner_enqueue_failed, *args)
       end
 
+      # Generic implementation of the locking logic
+      #
+      # Returns false; when unable to acquire the lock.
+      # * Returns true; when lock acquired, without a timeout.
+      # * Returns timestamp; when lock acquired with a timeout, timestamp is
+      #   when the lock timeout expires.
+      #
+      # @param [Symbol] lock_key_method the method returning redis key to lock
+      # @param [Symbol] lock_key_method the method called if lock failed
+      # @param [Array] args job arguments
+      # @return [Boolean, Fixnum]
       def acquire_lock_impl!(lock_key_method, failed_hook, *args)
         acquired = false
         lock_key = self.send lock_key_method, *args
@@ -236,7 +243,7 @@ module Resque
       def around_perform_lock(*args)
         lock_until = acquire_lock!(*args)
 
-        # Release loner lock as job has been enqueued
+        # Release loner lock as job has been dequeued
         release_loner_lock!(*args) if loner
 
         # Abort if another job holds the lock.
