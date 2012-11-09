@@ -14,7 +14,7 @@ module Resque
     #   end
     # end
     #
-    # If you wish to limit the durati on a lock may be held for, you can
+    # If you wish to limit the duration a lock may be held for, you can
     # set/override `lock_timeout`. e.g.
     #
     # class UpdateNetworkGraph
@@ -29,6 +29,25 @@ module Resque
     #   end
     # end
     #
+    # If you wish that only one instance of the job defined by #identifier may be
+    # enqueued or running, you can set/override `loner`. e.g.
+    #
+    # class PdfExport
+    #   extend Resque::Plugins::LockTimeout
+    #   @queue = :exports
+    #
+    #   # only one job can be running/enqueued at a time. For instance a button
+    #   # to run a PDF export. If the user clicks several times on it, enqueue
+    #   # the job if and only if
+    #   #   - the same export is not currently running
+    #   #   - the same export is not currently queued.
+    #   # ('same' being defined by `identifier`)
+    #   @loner = true
+    #
+    #   def self.perform(repo_id)
+    #     heavy_lifting
+    #   end
+    # end
     module LockTimeout
       # @abstract You may override to implement a custom identifier,
       #           you should consider doing this if your job arguments
@@ -65,6 +84,10 @@ module Resque
         ['lock', name, identifier(*args)].compact.join(':')
       end
 
+      def redis_loner_lock_key(*args)
+        ['loner', redis_lock_key(*args)].compact.join(':')
+      end
+
       # Number of seconds the lock may be held for.
       # A value of 0 or below will lock without a timeout.
       #
@@ -72,6 +95,14 @@ module Resque
       # @return [Fixnum]
       def lock_timeout(*args)
         @lock_timeout ||= 0
+      end
+
+      # Whether one instance of the job should be running or enqueued.
+      #
+      # @param [Array] args job arguments
+      # @return [TrueClass || FalseClass]
+      def loner(*args)
+        @loner ||= false
       end
 
       # Convenience method, not used internally.
@@ -89,10 +120,34 @@ module Resque
       end
 
       # @abstract
+      # Hook method; called when a were unable to enqueue loner job.
+      #
+      # @param [Array] args job arguments
+      def loner_enqueue_failed(*args)
+      end
+
+      # @abstract
       # Hook method; called when the lock expired before we released it.
       #
       # @param [Array] args job arguments
       def lock_expired_before_release(*args)
+      end
+
+      # @abstract
+      # if the job is a `loner`, enqueue only if no other same job
+      # is already running/enqueued
+      #
+      # @param [Array] args job arguments
+      def before_enqueue_lock(*args)
+        if loner
+          if locked?(*args) 
+            # Same job is currently running
+            loner_enqueue_failed(*args)
+            false
+          else
+            acquire_loner_lock!(*args)
+          end
+        end
       end
 
       # Try to acquire a lock.
@@ -104,8 +159,16 @@ module Resque
       #
       # @return [Boolean, Fixnum]
       def acquire_lock!(*args)
+        acquire_lock_impl!(:redis_lock_key, :lock_failed, *args)
+      end
+
+      def acquire_loner_lock!(*args)
+        acquire_lock_impl!(:redis_loner_lock_key, :loner_enqueue_failed, *args)
+      end
+
+      def acquire_lock_impl!(lock_key_method, failed_hook, *args)
         acquired = false
-        lock_key = redis_lock_key(*args)
+        lock_key = self.send lock_key_method, *args
 
         unless lock_timeout(*args) > 0
           # Acquire without using a timeout.
@@ -115,7 +178,7 @@ module Resque
           acquired, lock_until = acquire_lock_algorithm!(lock_key, *args)
         end
 
-        lock_failed(*args) if !acquired
+        self.send(failed_hook, *args) if !acquired
         lock_until && acquired ? lock_until : acquired
       end
 
@@ -154,6 +217,10 @@ module Resque
         lock_redis.del(redis_lock_key(*args))
       end
 
+      def release_loner_lock!(*args)
+        lock_redis.del(redis_loner_lock_key(*args))
+      end
+
       # Refresh the lock.
       #
       # @param [Array] args job arguments
@@ -167,8 +234,13 @@ module Resque
       #
       # @param [Array] args job arguments
       def around_perform_lock(*args)
+        lock_until = acquire_lock!(*args)
+
+        # Release loner lock as job has been enqueued
+        release_loner_lock!(*args) if loner
+
         # Abort if another job holds the lock.
-        return unless lock_until = acquire_lock!(*args)
+        return unless lock_until
 
         begin
           yield
