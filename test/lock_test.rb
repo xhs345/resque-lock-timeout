@@ -159,8 +159,11 @@ class LockTest < MiniTest::Unit::TestCase
   def test_cannot_enqueue_two_loner_jobs
     Resque.enqueue(LonelyJob)
     Resque.enqueue(LonelyJob)
+    assert_equal 1, Resque.size(:test), '1 job should be enqueued'
 
-    assert_equal 1, Resque.size(:test)
+    Resque.enqueue(LonelyTimeoutJob)
+    Resque.enqueue(LonelyTimeoutJob)
+    assert_equal 2, Resque.size(:test), '2 jobs should be enqueued'
   end
 
   def test_loner_job_should_not_be_enqued_if_already_running
@@ -169,6 +172,19 @@ class LockTest < MiniTest::Unit::TestCase
 
     sleep 0.1 # The LonelyJob should be running (perfom is 0.2 seconds long)
     Resque.enqueue(LonelyJob)
+    assert_equal 0, Resque.size(:test)
+    assert_equal 1, $enqueue_failed, 'One job callback should increment enqueue_failed'
+
+    thread.join
+    assert_equal 1, $success, 'One job should increment success'
+  end
+
+  def test_loner_job_with_timeout_should_not_be_enqued_if_already_running
+    Resque.enqueue(LonelyTimeoutJob)
+    thread = Thread.new { @worker.process }
+
+    sleep 0.1 # Job should be running (perfom is 0.2 seconds long)
+    Resque.enqueue(LonelyTimeoutJob)
     assert_equal 0, Resque.size(:test)
     assert_equal 1, $enqueue_failed, 'One job callback should increment enqueue_failed'
 

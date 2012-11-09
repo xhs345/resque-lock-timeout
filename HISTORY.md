@@ -1,4 +1,4 @@
-## 0.4.0 (pending)
+## 0.4.0 (2012-11-09)
 
 * Add `@loner` boolean option to prevent job being enqueued if already
   running/enqueued. (Thanks to @ssaunier)
