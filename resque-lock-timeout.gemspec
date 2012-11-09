@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name              = 'resque-lock-timeout'
-  s.version           = '0.3.3'
+  s.version           = '0.4.0a'
   s.date              = Time.now.strftime('%Y-%m-%d')
   s.summary           = 'A Resque plugin adding locking, with optional timeout/deadlock handling to resque jobs.'
   s.homepage          = 'http://github.com/lantins/resque-lock-timeout'
@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
   A Resque plugin. Adds locking, with optional timeout/deadlock handling to
   resque jobs.
 
-  Using a `lock_timeout` allows you to re-aquire the lock should your worker
+  Using a `lock_timeout` allows you to re-acquire the lock should your worker
   fail, crash, or is otherwise unable to relase the lock.
   
   i.e. Your server unexpectedly looses power. Very handy for jobs that are

@@ -113,7 +113,7 @@ module Resque
       end
 
       # @abstract
-      # Hook method; called when a were unable to aquire the lock.
+      # Hook method; called when a were unable to acquire the lock.
       #
       # @param [Array] args job arguments
       def lock_failed(*args)
@@ -189,7 +189,7 @@ module Resque
         lock_until && acquired ? lock_until : acquired
       end
 
-      # Attempts to aquire the lock using a timeout / deadlock algorithm.
+      # Attempts to acquire the lock using a timeout / deadlock algorithm.
       #
       # Locking algorithm: http://code.google.com/p/redis/wiki/SetnxCommand
       #

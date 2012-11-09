@@ -1,7 +1,11 @@
-## 0.3.3 (2012-03-09)
-## 0.3.2 (2012-03-09)
+## 0.4.0 (pending)
 
-* Release changes nothing of importance, tested against v1.20.0 of resque.
+* Add `@loner` boolean option to prevent job being enqueued if already
+  running/enqueued. (Thanks to @ssaunier)
+
+## 0.3.3 (2012-03-09)
+
+* Tested against v1.20.0 of resque.
 
 ## 0.3.1 (2011-07-16)
 
@@ -23,4 +27,4 @@
 ## 0.2.0 (2010-05-05)
 
 * Initial release as `resque-lock-timeout`, forked from Chris Wanstrath'
-`resque-lock`.
+  `resque-lock`.

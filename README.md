@@ -6,7 +6,7 @@ A [Resque][rq] plugin. Requires Resque >= v1.8.0.
 resque-lock-timeout adds locking, with optional timeout/deadlock handling to
 resque jobs.
 
-Using a `lock_timeout` allows you to re-aquire the lock should your worker
+Using a `lock_timeout` allows you to re-acquire the lock should your worker
 fail, crash, or is otherwise unable to relase the lock. **i.e.** Your server
 unexpectedly looses power. Very handy for jobs that are recurring or may be
 retried.
