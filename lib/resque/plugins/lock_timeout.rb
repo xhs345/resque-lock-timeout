@@ -3,51 +3,51 @@ module Resque
     # If you want only one instance of your job running at a time,
     # extend it with this module:
     #
-    # require 'resque-lock-timeout'
+    #   require 'resque-lock-timeout'
     #
-    # class UpdateNetworkGraph
-    #   extend Resque::Plugins::LockTimeout
-    #   @queue = :network_graph
+    #   class UpdateNetworkGraph
+    #     extend Resque::Plugins::LockTimeout
+    #     @queue = :network_graph
     #
-    #   def self.perform(repo_id)
-    #     heavy_lifting
+    #     def self.perform(repo_id)
+    #       heavy_lifting
+    #     end
     #   end
-    # end
     #
     # If you wish to limit the duration a lock may be held for, you can
     # set/override `lock_timeout`. e.g.
     #
-    # class UpdateNetworkGraph
-    #   extend Resque::Plugins::LockTimeout
-    #   @queue = :network_graph
+    #   class UpdateNetworkGraph
+    #     extend Resque::Plugins::LockTimeout
+    #     @queue = :network_graph
     #
-    #   # lock may be held for upto an hour.
-    #   @lock_timeout = 3600
+    #     # lock may be held for upto an hour.
+    #     @lock_timeout = 3600
     #
-    #   def self.perform(repo_id)
-    #     heavy_lifting
+    #     def self.perform(repo_id)
+    #       heavy_lifting
+    #     end
     #   end
-    # end
     #
     # If you wish that only one instance of the job defined by #identifier may be
     # enqueued or running, you can set/override `loner`. e.g.
     #
-    # class PdfExport
-    #   extend Resque::Plugins::LockTimeout
-    #   @queue = :exports
+    #   class PdfExport
+    #     extend Resque::Plugins::LockTimeout
+    #     @queue = :exports
     #
-    #   # only one job can be running/enqueued at a time. For instance a button
-    #   # to run a PDF export. If the user clicks several times on it, enqueue
-    #   # the job if and only if
-    #   #   - the same export is not currently running
-    #   #   - the same export is not currently queued.
-    #   # ('same' being defined by `identifier`)
-    #   @loner = true
+    #     # only one job can be running/enqueued at a time. For instance a button
+    #     # to run a PDF export. If the user clicks several times on it, enqueue
+    #     # the job if and only if
+    #     #   - the same export is not currently running
+    #     #   - the same export is not currently queued.
+    #     # ('same' being defined by `identifier`)
+    #     @loner = true
     #
-    #   def self.perform(repo_id)
-    #     heavy_lifting
+    #     def self.perform(repo_id)
+    #       heavy_lifting
+    #     end
     #   end
-    # end
     module LockTimeout
       # @abstract You may override to implement a custom identifier,
       #           you should consider doing this if your job arguments
@@ -170,7 +170,7 @@ module Resque
       #   when the lock timeout expires.
       #
       # @param [Symbol] lock_key_method the method returning redis key to lock
-      # @param [Symbol] lock_key_method the method called if lock failed
+      # @param [Symbol] failed_hook the method called if lock failed
       # @param [Array] args job arguments
       # @return [Boolean, Fixnum]
       def acquire_lock_impl!(lock_key_method, failed_hook, *args)
@@ -224,6 +224,9 @@ module Resque
         lock_redis.del(redis_lock_key(*args))
       end
 
+      # Release the enqueue lock for loner jobs
+      #
+      # @param [Array] args job arguments
       def release_loner_lock!(*args)
         lock_redis.del(redis_loner_lock_key(*args))
       end
