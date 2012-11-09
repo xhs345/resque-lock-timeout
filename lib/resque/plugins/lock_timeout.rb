@@ -75,8 +75,7 @@ module Resque
       # Override to fully control the lock key used. It is passed
       # the job arguments.
       #
-      # The default looks like this:
-      # `resque-lock-timeout:<class name>:<identifier>`
+      # The default looks like this: `lock:<class name>:<identifier>`
       #
       # @param [Array] args job arguments
       # @return [String] redis key
@@ -84,6 +83,12 @@ module Resque
         ['lock', name, identifier(*args)].compact.join(':')
       end
 
+      # Builds lock key used by `@loner` option. Passed job arguments.
+      #
+      # The default looks like this: `loner:lock:<class name>:<identifier>`
+      #
+      # @param [Array] args job arguments
+      # @return [String] redis key
       def redis_loner_lock_key(*args)
         ['loner', redis_lock_key(*args)].compact.join(':')
       end
