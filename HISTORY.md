@@ -1,3 +1,7 @@
+## 0.4.1 (2012-11-19)
+
+* Bug fix, allow `@loner` job to be enqueued if timeout expires.
+
 ## 0.4.0 (2012-11-09)
 
 * Add `@loner` boolean option to prevent job being enqueued if already
