@@ -202,4 +202,15 @@ class LockTest < MiniTest::Unit::TestCase
     assert_equal 1, Resque.size(:test), "Should be able to enqueue a loner job if one previously finished after the timeout"
   end
 
+  def test_loner_job_should_get_enqueued_if_previous_inline_job_finished
+    Resque.inline = true
+    Resque.enqueue(LonelyJob)
+    Resque.inline = false
+
+    sleep 0.5
+
+    assert_equal 0, Resque.size(:test), "Nothing should be in the queue"
+    Resque.enqueue(LonelyJob)
+    assert_equal 1, Resque.size(:test), "Should have enqueued the job"
+  end
 end
