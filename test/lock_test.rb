@@ -157,13 +157,25 @@ class LockTest < MiniTest::Unit::TestCase
   end
 
   def test_cannot_enqueue_two_loner_jobs
-    Resque.enqueue(LonelyJob)
-    Resque.enqueue(LonelyJob)
+    assert Resque.enqueue(LonelyJob)
+    assert !Resque.enqueue(LonelyJob)
     assert_equal 1, Resque.size(:test), '1 job should be enqueued'
 
-    Resque.enqueue(LonelyTimeoutJob)
-    Resque.enqueue(LonelyTimeoutJob)
+    assert Resque.enqueue(LonelyTimeoutJob)
+    assert !Resque.enqueue(LonelyTimeoutJob)
     assert_equal 2, Resque.size(:test), '2 jobs should be enqueued'
+  end
+
+  def test_queue_inspection
+    Resque.enqueue(LonelyJob)
+    assert !LonelyJob.locked?, 'job is still in queue'
+    assert LonelyJob.loner_locked?, 'loner key should have been set'
+    assert LonelyJob.enqueued?, 'loner key should have been set'
+
+    Resque.enqueue(SlowJob)
+    assert !SlowJob.locked?, 'job is still in queue'
+    assert !SlowJob.loner_locked?, 'no loner lock key should hae been created'
+    assert !SlowJob.enqueued?, 'no loner lock key should hae been created'
   end
 
   def test_loner_job_should_not_be_enqued_if_already_running

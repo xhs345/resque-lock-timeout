@@ -110,11 +110,34 @@ module Resque
         @loner ||= false
       end
 
+      # Checks if job is locked or loner locked (if applicable).
+      #
+      # @return [Boolean] true if the job is locked by someone
+      def loner_locked?(*args)
+        locked?(*args) || (loner && enqueued?(*args))
+      end
+
       # Convenience method to check if job is locked and lock did not expire.
       #
       # @return [Boolean] true if the job is locked by someone
       def locked?(*args)
-        lock_until = lock_redis.get(redis_lock_key(*args))
+        inspect_lock(:redis_lock_key, *args)
+      end
+
+      # Convenience method to check if a loner job is queued and lock did not expire.
+      #
+      # @return [Boolean] true if the job is already queued
+      def enqueued?(*args)
+        inspect_lock(:redis_loner_lock_key, *args)
+      end
+
+      # Check for existence of given key.
+      #
+      # @param [Array] args job arguments
+      # @param [Symbol] lock_key_method the method returning redis key to lock
+      # @return [Boolean] true if the lock exists
+      def inspect_lock(lock_key_method, *args)
+        lock_until = lock_redis.get(self.send(lock_key_method, *args))
         return (lock_until.to_i > Time.now.to_i) if lock_timeout(*args) > 0
         !lock_until.nil?
       end
