@@ -4,3 +4,4 @@ doc/
 Gemfile.lock
 coverage/
 .rbx/
+.bundle/

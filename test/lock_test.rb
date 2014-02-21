@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/test_helper'
 
-class LockTest < MiniTest::Unit::TestCase
+class LockTest < Minitest::Test
   def setup
     $success = $lock_failed = $lock_expired = $enqueue_failed = 0
     Resque.redis.flushall

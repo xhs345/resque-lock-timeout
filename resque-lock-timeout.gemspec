@@ -12,14 +12,12 @@ Gem::Specification.new do |s|
   s.files            += Dir.glob('lib/**/*')
   s.files            += Dir.glob('test/**/*')
 
-  s.add_dependency('resque', '>= 1.22.0')
+  s.add_dependency('resque', '~> 1.22')
   s.add_development_dependency('rake')
-  s.add_development_dependency('minitest')
-  s.add_development_dependency('json')
-  s.add_development_dependency('yard')
+  s.add_development_dependency('minitest', '~> 5.2')
+  s.add_development_dependency('yard', '~> 0.8')
   s.add_development_dependency('rdiscount') unless RUBY_PLATFORM == 'java'
-  s.add_development_dependency('simplecov', '>= 0.3.0')
-  s.add_development_dependency('SystemTimer') if Gem.ruby_version < Gem::Version.new('1.9')
+  s.add_development_dependency('simplecov', '~> 0.7.1')
 
   s.description       = <<desc
   A Resque plugin. Adds locking, with optional timeout/deadlock handling to
