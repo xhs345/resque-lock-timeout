@@ -160,6 +160,8 @@ using job arguments. e.g.
 ### Helper Methods
 
 * `locked?` - checks if the lock is currently held.
+* `enqueued?` - checks if the loner lock is currently held.
+* `loner_locked?` - checks if the job is either enqueued (if a loner) or locked (any job).
 * `refresh_lock!` - Refresh the lock, useful for jobs that are taking longer
     then usual but your okay with them holding on to the lock a little longer.
 
