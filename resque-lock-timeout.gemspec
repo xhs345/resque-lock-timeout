@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.files            += Dir.glob('lib/**/*')
   s.files            += Dir.glob('test/**/*')
 
-  s.add_dependency('resque', '>= 1.8.0')
+  s.add_dependency('resque', '>= 1.22.0')
   s.add_development_dependency('rake')
   s.add_development_dependency('minitest')
   s.add_development_dependency('json')
