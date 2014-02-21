@@ -13,11 +13,12 @@ Gem::Specification.new do |s|
   s.files            += Dir.glob('lib/**/*')
   s.files            += Dir.glob('test/**/*')
 
-  s.add_dependency('resque', '~> 1.22')
-  s.add_development_dependency('rake', '~> 10.3')
+  #s.add_dependency('resque', '~> 2.0')
+  s.add_dependency('resque')
+  s.add_development_dependency('rake')
   s.add_development_dependency('minitest', '~> 5.2')
   s.add_development_dependency('yard', '~> 0.8')
-  s.add_development_dependency('simplecov', '~> 0.7', '>= 0.7.1')
+  s.add_development_dependency('simplecov', '~> 0.7.1')
 
   s.description       = <<desc
   A Resque plugin. Adds locking, with optional timeout/deadlock handling to
