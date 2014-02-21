@@ -1,3 +1,8 @@
+## 0.4.4 (2014-02-21)
+
+* Add `enqueued?` and `loner_locked?` helper methods.
+* Bump minimum version of resque to v1.22
+
 ## 0.4.1 (2012-11-19)
 
 * Bug fix, allow `@loner` job to be enqueued if timeout expires.
