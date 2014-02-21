@@ -212,6 +212,6 @@ Lock timeout from Ryan Carvar' [resque-lock-retry][resque-lock-retry] plugin.
 And a little tinkering from Luke Antins.
 
 [rq]: http://github.com/defunkt/resque
-[redis-setnx]: http://code.google.com/p/redis/wiki/SetnxCommand
+[redis-setnx]: http://redis.io/commands/setnx
 [resque-lock]: http://github.com/defunkt/resque-lock
 [resque-lock-retry]: http://github.com/rcarver/resque-lock-retry
