@@ -287,15 +287,13 @@ module Resque
         ensure
           # Release the lock on success and error. Unless a lock_timeout is
           # used, then we need to be more careful before releasing the lock.
-          unless lock_until === true
-            now = Time.now.to_i
-            if lock_until < now
-              # Eeek! Lock expired before perform finished. Trigger callback.
-              lock_expired_before_release(*args)
-              return # dont relase lock.
-            end
+          now = Time.now.to_i
+          if lock_until != true and lock_until < now
+            # Eeek! Lock expired before perform finished. Trigger callback.
+            lock_expired_before_release(*args)
+          else
+            release_lock!(*args)
           end
-          release_lock!(*args)
         end
       end
 
