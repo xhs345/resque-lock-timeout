@@ -158,3 +158,15 @@ class LonelyTimeoutExpiringJob
     sleep 2
   end
 end
+
+# Job that raises an error after its timeout.
+class FailingAfterTimeoutJob
+  extend Resque::Plugins::LockTimeout
+  @queue = :test
+  @lock_timeout = 1
+
+  def self.perform
+    sleep 2
+    raise
+  end
+end

@@ -225,4 +225,10 @@ class LockTest < Minitest::Test
     Resque.enqueue(LonelyJob)
     assert_equal 1, Resque.size(:test), "Should have enqueued the job"
   end
+
+  def test_exceptions_in_job_after_timeout_should_be_marked_as_failure
+    Resque.enqueue(FailingAfterTimeoutJob)
+    @worker.process
+    assert_equal 1, Resque::Failure.count, "Should have been marked as failure"
+  end
 end
