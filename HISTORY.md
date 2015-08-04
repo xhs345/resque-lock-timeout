@@ -1,4 +1,4 @@
-## HEAD
+## 0.4.5 (2015-08-04)
 
 - Fix: ensure exceptions are kept if raised **after** lock timeout expires.
 
