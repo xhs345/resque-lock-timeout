@@ -297,7 +297,12 @@ module Resque
         end
       end
 
+      def on_failure_lock(exception, *args)
+        # In case of a DirtyExit, the ensure block of the around hook is not called
+        if exception.is_a?(Resque::DirtyExit)
+          release_lock!(*args)
+        end
+      end
     end
-
   end
 end

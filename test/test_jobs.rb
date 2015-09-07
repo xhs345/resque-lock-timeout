@@ -38,6 +38,16 @@ class FailingFastJob
   end
 end
 
+# Job that fails with a SIGKILL
+class FailingKilledJob
+  extend Resque::Plugins::LockTimeout
+  @queue = :test
+
+  def self.perform
+    Process.kill("KILL", Process.pid)
+  end
+end
+
 # Job that enables the timeout algorithm.
 class SlowWithTimeoutJob
   extend Resque::Plugins::LockTimeout
