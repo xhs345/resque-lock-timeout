@@ -65,6 +65,20 @@ class LockTest < Minitest::Test
     assert_equal false, FastJob.locked?, 'lock should have been released'
   end
 
+  if Process.respond_to?(:fork) && Gem::Version.new(Resque::VERSION) >= Gem::Version.new('1.20.0')
+    def test_lock_is_released_on_dirty_exit
+      Resque.enqueue(FailingKilledJob)
+      job = @worker.reserve
+      child = fork do
+        Resque.redis.client.reconnect
+        job.perform
+      end
+      Process.waitpid(child)
+      job.fail(Resque::DirtyExit.new)
+      assert_equal false, FailingKilledJob.locked?, 'lock should have been released'
+    end
+  end
+
   def test_can_acquire_lock_with_timeout
     now = Time.now.to_i
     assert SlowWithTimeoutJob.acquire_lock!, 'acquire lock'
