@@ -7,13 +7,12 @@ Gem::Specification.new do |s|
   s.homepage          = 'http://github.com/lantins/resque-lock-timeout'
   s.email             = 'luke@lividpenguin.com'
   s.authors           = ['Luke Antins', 'Ryan Carver', 'Chris Wanstrath']
-  s.has_rdoc          = false
 
   s.files             = %w(README.md Rakefile LICENSE HISTORY.md)
   s.files            += Dir.glob('lib/**/*')
   s.files            += Dir.glob('test/**/*')
 
-  s.add_dependency('resque', '~> 1.22')
+  s.add_dependency('resque', '~> 2.0')
   s.add_development_dependency('rake', '~> 10.3')
   s.add_development_dependency('minitest', '~> 5.2')
   s.add_development_dependency('yard', '~> 0.8')
