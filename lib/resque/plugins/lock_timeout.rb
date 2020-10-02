@@ -69,7 +69,7 @@ module Resque
       #
       # @return [Redis] redis object
       def lock_redis
-        Resque.backend.store
+        Resque.redis
       end
 
       # Override to fully control the lock key used. It is passed
