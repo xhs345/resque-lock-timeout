@@ -14,6 +14,8 @@ fail, crash, or is otherwise unable to release the lock. **i.e.** Your server
 unexpectedly loses power. Very handy for jobs that are recurring or may be
 retried.
 
+**n.b.** By default, a job that fails to acquire a lock will be dropped. You can handle lock failures by implementing the available [callback](#callbacks).
+
 Usage / Examples
 ----------------
 
@@ -168,7 +170,7 @@ using job arguments. e.g.
 * `refresh_lock!` - Refresh the lock, useful for jobs that are taking longer
     then usual but your okay with them holding on to the lock a little longer.
 
-### Callbacks
+### <a name="callbacks"></a> Callbacks
 
 Several callbacks are available to override and implement your own logic, e.g.
 
